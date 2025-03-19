@@ -40,6 +40,7 @@ export default function MessageForm() {
       <form ref={form} className="flex gap-2 items-center" onSubmit={handleSendMessageFormSubmit}>
         <Textarea
           name="message"
+          data-testid="message-input"
           placeholder="Ask a question or share some code..."
           className="min-h-12 resize-none"
           rows={1}

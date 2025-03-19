@@ -1,5 +1,6 @@
+import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, Mock } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
 import MessageForm from './message-form'
 import { useSessions } from './sessions-provider'
@@ -14,18 +15,20 @@ describe('MessageForm', () => {
     const mockUpdateSessionMessages = vi.fn()
     const mockAddSession = vi.fn()
 
-      // Mock implementation of useSessions
-      (useSessions as Mock).mockImplementation(() => ({
+    // Mock implementation of useSessions
+    useSessions.mockImplementation(
+      () => ({
         activeSession: { id: 1 },
         loading: false,
         updateSessionMessages: mockUpdateSessionMessages,
         addSession: mockAddSession,
-      }))
+      })
+    )
 
     render(<MessageForm />)
 
     // Verify that the form elements are rendered
-    const textarea = screen.getByPlaceholderText('Ask a question or share some code...')
+    const textarea = screen.getByTestId('message-input')
     const button = screen.getByRole('button')
 
     expect(textarea).not.toBeNull()
@@ -43,18 +46,18 @@ describe('MessageForm', () => {
   it('should add a new session if there is no active session', async () => {
     const mockAddSession = vi.fn()
 
-      // Mock implementation of useSessions
-      (useSessions as Mock).mockImplementation(() => ({
-        activeSession: null,
-        loading: false,
-        updateSessionMessages: vi.fn(),
-        addSession: mockAddSession,
-      }))
+    // Mock implementation of useSessions
+    useSessions.mockImplementation(() => ({
+      activeSession: null,
+      loading: false,
+      updateSessionMessages: vi.fn(),
+      addSession: mockAddSession,
+    }))
 
     render(<MessageForm />)
 
     // Verify that the form elements are rendered
-    const textarea = screen.getByPlaceholderText('Ask a question or share some code...')
+    const textarea = screen.getByTestId('message-input')
     const button = screen.getByRole('button')
 
     expect(textarea).not.toBeNull()
@@ -75,7 +78,7 @@ describe('MessageForm', () => {
 
   it('should show the loading spinner when loading', () => {
     // Mock implementation of useSessions
-    (useSessions as Mock).mockImplementation(() => ({
+    useSessions.mockImplementation(() => ({
       activeSession: null,
       loading: true,
       updateSessionMessages: vi.fn(),
@@ -86,5 +89,23 @@ describe('MessageForm', () => {
 
     // Verify that the loading spinner is displayed
     expect(screen.getByText('Pensando')).not.toBeNull()
+  })
+
+  it('should send a message when the Enter key is pressed', async () => {
+    useSessions.mockImplementation(() => ({
+      activeSession: { id: 1 },
+      loading: false,
+      updateSessionMessages: vi.fn(),
+      addSession: vi.fn(),
+    }))
+
+    render(<MessageForm />)
+    const textarea = screen.getByTestId('message-input')
+    fireEvent.change(textarea, { target: { value: 'Test message' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
+
+    await waitFor(() => {
+      expect(useSessions().updateSessionMessages).toHaveBeenCalledWith(1, 'Test message')
+    })
   })
 })
